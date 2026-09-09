@@ -284,6 +284,7 @@ def get_weather(location: str) -> dict:
 
         data = {
             "source": "Open-Meteo",
+            "url": "https://api.open-meteo.com/v1/forecast",
             "location": _safe_string(
                 place.get("name", location)
             ),
