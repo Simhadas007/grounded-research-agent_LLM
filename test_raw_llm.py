@@ -1,20 +1,53 @@
+
+"""
+Offline smoke tests for the configured LLM.
+
+IMPORTANT:
+This file intentionally does NOT make a live Groq API request.
+
+Live provider testing should be performed manually when needed,
+rather than automatically during pytest collection.
+"""
+
 from agent import llm
 
-response = llm.invoke(
-    'Return only this JSON: {"ok": true}'
-)
 
-print("TYPE:")
-print(type(response))
+def test_llm_is_configured():
+    """
+    Verify that the application has created an LLM instance.
+    """
 
-print("\nFULL RESPONSE:")
-print(repr(response))
+    assert llm is not None
 
-print("\nCONTENT:")
-print(repr(getattr(response, "content", None)))
 
-print("\nADDITIONAL KWARGS:")
-print(repr(getattr(response, "additional_kwargs", None)))
+def test_llm_has_model_name():
+    """
+    Verify that the configured model is present.
+    """
 
-print("\nRESPONSE METADATA:")
-print(repr(getattr(response, "response_metadata", None)))
+    assert getattr(llm, "model", None)
+
+
+def test_llm_temperature_is_deterministic():
+    """
+    The research agent should use deterministic generation.
+    """
+
+def test_llm_temperature_is_deterministic():
+    temperature = getattr(llm, "temperature", None)
+    assert temperature is not None
+    assert temperature < 1e-6
+
+def test_llm_has_token_limit():
+    """
+    Verify that generated responses have a configured token bound.
+    """
+
+    max_tokens = getattr(
+        llm,
+        "max_tokens",
+        None,
+    )
+
+    assert max_tokens is not None
+    assert max_tokens > 0

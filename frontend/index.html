@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Grounded Research Agent — live research, verified evidence, and grounded answers.">
+<title>Grounded Research Agent</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ================= TOPBAR ================= -->
+  <header class="topbar">
+    <div class="frame topbar-row">
+      <div class="mark">
+        <span class="mark-glyph">GR</span>
+        <div class="mark-text">
+          <span class="mark-name">Grounded Research</span>
+          <span class="mark-sub">Evidence-first research agent</span>
+        </div>
+      </div>
+      <div class="uptime" id="uptime-pill">
+        <i class="uptime-dot"></i> Agent online
+      </div>
+    </div>
+  </header>
+
+  <main class="frame">
+
+    <!-- ================= HERO ================= -->
+    <section class="hero">
+      <p class="hero-kicker">No answer without a source behind it</p>
+      <h1 class="hero-title">Ask a question.<br>Get an answer you can trace back.</h1>
+      <p class="hero-lede">
+        The agent chooses a live source, pulls evidence, checks whether that evidence actually
+        holds up, and only then writes an answer — with every claim linked to where it came from.
+      </p>
+    </section>
+
+    <!-- ================= QUESTION INPUT ================= -->
+    <section class="sheet" id="query-sheet">
+      <div class="sheet-tab">Query</div>
+
+      <div class="sheet-body">
+        <div class="query-head">
+          <h2>What do you want to research?</h2>
+          <span class="badge badge-teal">Grounded output</span>
+        </div>
+
+        <div class="field">
+          <textarea
+            id="question"
+            maxlength="2000"
+            placeholder="e.g. What did the FOMC decide at its most recent meeting, and why?"
+            aria-label="Research question"
+          ></textarea>
+          <span id="char-count" class="char-count">0 / 2000</span>
+        </div>
+
+        <div class="query-foot">
+          <p class="key-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run</p>
+          <button id="research-btn" class="btn-primary" type="button">
+            <span id="button-loader" class="spinner hidden"></span>
+            <span id="button-text">Start research</span>
+            <span class="btn-arrow" aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PIPELINE ================= -->
+    <section id="progress-section" class="pipeline hidden" aria-live="polite">
+      <div class="pipeline-head">
+        <h2>Working through the pipeline</h2>
+        <span class="pipeline-pulse"><i></i>Live</span>
+      </div>
+
+      <ol class="pipeline-rail">
+        <li id="status-router" class="step">
+          <span class="step-index">01</span>
+          <span class="status-icon step-icon">○</span>
+          <span class="step-text">
+            <strong>Route the question</strong>
+            <em>Deciding which source fits</em>
+          </span>
+        </li>
+        <li id="status-retrieval" class="step">
+          <span class="step-index">02</span>
+          <span class="status-icon step-icon">○</span>
+          <span class="step-text">
+            <strong>Retrieve evidence</strong>
+            <em>Pulling from the live source</em>
+          </span>
+        </li>
+        <li id="status-evidence" class="step">
+          <span class="step-index">03</span>
+          <span class="status-icon step-icon">○</span>
+          <span class="step-text">
+            <strong>Validate evidence</strong>
+            <em>Checking relevance &amp; quality</em>
+          </span>
+        </li>
+        <li id="status-answer" class="step">
+          <span class="step-index">04</span>
+          <span class="status-icon step-icon">○</span>
+          <span class="step-text">
+            <strong>Write the answer</strong>
+            <em>Grounded in what was found</em>
+          </span>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ================= ERROR ================= -->
+    <section id="error-section" class="sheet sheet-error hidden" aria-live="assertive">
+      <div class="sheet-tab tab-error">Interrupted</div>
+      <div class="sheet-body error-body">
+        <div class="error-mark">!</div>
+        <div class="error-copy">
+          <h2>The research couldn't be completed</h2>
+          <p id="error-message">The research request could not be completed.</p>
+          <div class="error-meta">
+            <div><span>Stage</span><strong id="error-stage">—</strong></div>
+            <div><span>Route</span><strong id="error-route">—</strong></div>
+          </div>
+          <button id="retry-btn" class="btn-secondary" type="button">↻ Try again</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RESULT ================= -->
+    <section id="result-section" class="result hidden">
+
+      <div class="result-banner">
+        <span class="result-stamp">Verified</span>
+        <p>Research complete — this answer is backed by the evidence checked below.</p>
+      </div>
+
+      <div class="result-grid">
+
+        <!-- MAIN COLUMN -->
+        <div class="result-main">
+
+          <!-- ANSWER -->
+          <article class="sheet">
+            <div class="sheet-tab">Answer</div>
+            <div class="sheet-body">
+              <h2 class="answer-heading">Grounded answer</h2>
+              <div id="answer" class="answer-text">—</div>
+              <div class="trust-row">
+                <span>Live research</span>
+                <span>Evidence checked</span>
+                <span>Answer grounded</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- EVIDENCE -->
+          <article class="sheet">
+            <div class="sheet-tab">Evidence</div>
+            <div class="sheet-body">
+              <div class="evidence-top">
+                <div class="evidence-count">
+                  <span id="evidence-number" class="mono-figure">0</span>
+                  <span>sources found</span>
+                </div>
+                <span id="quality-status" class="badge badge-teal">Quality unavailable</span>
+              </div>
+
+              <p id="evidence-description" class="evidence-desc">
+                Evidence retrieved from the selected live research source and validated
+                through the security pipeline.
+              </p>
+              <p id="evidence-source-preview" class="evidence-preview">Source-backed research result</p>
+
+              <div class="assessment">
+                <h3>Evidence assessment</h3>
+                <p id="assessment-text">The retrieved evidence was evaluated before answer generation.</p>
+                <div class="assessment-tags">
+                  <span id="relevance-status">• Relevance unavailable</span>
+                  <span id="sufficiency-status">• Sufficiency unavailable</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- SOURCES -->
+          <article class="sheet">
+            <div class="sheet-tab">Sources</div>
+            <div class="sheet-body">
+              <div class="sources-head">
+                <h2>Citations</h2>
+                <span id="source-count" class="badge badge-neutral">0 sources</span>
+              </div>
+              <div id="sources" class="sources-list"></div>
+              <p class="sources-note">Every source below was pulled live and screened before it could shape the answer above.</p>
+            </div>
+          </article>
+
+        </div>
+
+        <!-- SIDEBAR -->
+        <aside class="result-side">
+
+          <article class="sheet">
+            <div class="sheet-tab">Details</div>
+            <div class="sheet-body">
+              <dl class="detail-list">
+                <div class="detail-row">
+                  <dt>Route</dt>
+                  <dd id="result-route" class="mono-figure">—</dd>
+                </div>
+                <div class="detail-row">
+                  <dt>Evidence count</dt>
+                  <dd id="result-evidence" class="mono-figure">0</dd>
+                </div>
+                <div class="detail-row">
+                  <dt>Status</dt>
+                  <dd class="status-ok"><i></i>Completed</dd>
+                </div>
+                <div class="detail-row">
+                  <dt>Evidence quality</dt>
+                  <dd id="detail-quality">—</dd>
+                </div>
+                <div class="detail-row">
+                  <dt>Relevant</dt>
+                  <dd id="detail-relevance">—</dd>
+                </div>
+                <div class="detail-row">
+                  <dt>Sufficient</dt>
+                  <dd id="detail-sufficiency">—</dd>
+                </div>
+              </dl>
+            </div>
+          </article>
+
+          <article class="sheet sheet-dark">
+            <div class="sheet-body security-body">
+              <h3>Handled as untrusted input</h3>
+              <p>Everything the agent retrieves from the web is treated as untrusted data and
+                screened before it's allowed to shape the final answer.</p>
+              <div class="security-status"><i></i> Guardrails active</div>
+            </div>
+          </article>
+
+        </aside>
+      </div>
+    </section>
+
+    <!-- ================= HOW IT WORKS ================= -->
+    <section class="how">
+      <h2>How a question becomes an answer</h2>
+      <div class="how-grid">
+        <div class="how-item">
+          <span class="how-index">01</span>
+          <h3>Route</h3>
+          <p>The agent reads the question and decides which live source is actually
+            equipped to answer it.</p>
+        </div>
+        <div class="how-item">
+          <span class="how-index">02</span>
+          <h3>Retrieve</h3>
+          <p>It pulls the relevant material from that source in real time — not from
+            memory, not from a guess.</p>
+        </div>
+        <div class="how-item">
+          <span class="how-index">03</span>
+          <h3>Validate</h3>
+          <p>Before anything is used, the evidence is checked for relevance,
+            sufficiency, and quality.</p>
+        </div>
+        <div class="how-item">
+          <span class="how-index">04</span>
+          <h3>Answer</h3>
+          <p>Only then does the agent write a response — grounded in, and cited to,
+            what it actually found.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="frame footer-row">
+      <span>Grounded Research Agent</span>
+      <span>Live sources · Checked evidence · Cited answers</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

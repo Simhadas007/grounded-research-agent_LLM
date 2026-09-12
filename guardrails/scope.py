@@ -8,7 +8,8 @@ The agent must only operate within its explicitly supported research scope.
 Supported research capabilities:
     1. Stack Exchange technical/programming research
     2. Live weather research through the weather API
-    3. Combined technical + weather research when both are genuinely needed
+    3. General/current web research through Tavily
+    4. Combined technical + weather research when both are genuinely needed
 
 Anything else must be rejected before retrieval and answer generation.
 
@@ -26,7 +27,6 @@ unauthorized tool invocation.
 from __future__ import annotations
 
 from typing import Literal
-
 from pydantic import BaseModel, Field
 
 
@@ -37,6 +37,7 @@ from pydantic import BaseModel, Field
 ALLOWED_ROUTES = {
     "stackexchange",
     "weather",
+    "tavily",
     "both",
     "unsupported",
 }
@@ -52,9 +53,11 @@ class ScopeDecision(BaseModel):
     """
 
     allowed: bool
+
     route: Literal[
         "stackexchange",
         "weather",
+        "tavily",
         "both",
         "unsupported",
     ]
@@ -124,13 +127,14 @@ def validate_search_plan(plan) -> ScopeDecision:
     """
     Validate the complete AI-generated search plan.
 
-    The existing router produces:
+    The router produces:
         route
         search_query
         location
         reason
 
-    This function verifies the route before any external retrieval occurs.
+    This function verifies the route and required parameters before
+    any external retrieval occurs.
     """
 
     if plan is None:
@@ -148,7 +152,7 @@ def validate_search_plan(plan) -> ScopeDecision:
         return decision
 
     # ---------------------------------------------------------------
-    # Route-specific security checks
+    # Stack Exchange route
     # ---------------------------------------------------------------
 
     if decision.route == "stackexchange":
@@ -165,6 +169,10 @@ def validate_search_plan(plan) -> ScopeDecision:
                 ),
             )
 
+    # ---------------------------------------------------------------
+    # Weather route
+    # ---------------------------------------------------------------
+
     elif decision.route == "weather":
 
         location = getattr(plan, "location", "")
@@ -177,6 +185,27 @@ def validate_search_plan(plan) -> ScopeDecision:
                     "Weather route requires a valid location."
                 ),
             )
+
+    # ---------------------------------------------------------------
+    # Tavily route
+    # ---------------------------------------------------------------
+
+    elif decision.route == "tavily":
+
+        search_query = getattr(plan, "search_query", "")
+
+        if not isinstance(search_query, str) or not search_query.strip():
+            return ScopeDecision(
+                allowed=False,
+                route="unsupported",
+                reason=(
+                    "Tavily route requires a valid web research query."
+                ),
+            )
+
+    # ---------------------------------------------------------------
+    # Combined route
+    # ---------------------------------------------------------------
 
     elif decision.route == "both":
 
@@ -247,8 +276,8 @@ def scope_rejection_message() -> str:
     """
 
     return (
-        "I can only answer questions grounded in the supported research "
-        "sources: technical discussions from Stack Exchange and live "
-        "weather data. I don't have sufficient supported sources to "
-        "answer that question."
+        "I can only answer questions that can be grounded in my "
+        "supported research sources: technical discussions from "
+        "Stack Exchange, live weather data, and general web research. "
+        "I don't have sufficient supported sources to answer that question."
     )

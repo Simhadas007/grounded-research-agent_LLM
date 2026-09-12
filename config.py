@@ -16,6 +16,7 @@ def get_required_env(name: str) -> str:
 
 
 GROQ_API_KEY = get_required_env("GROQ_API_KEY")
+TAVILY_API_KEY = get_required_env("TAVILY_API_KEY")
 
 MODEL_NAME = "openai/gpt-oss-20b"
 

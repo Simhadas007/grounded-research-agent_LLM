@@ -1,6 +1,7 @@
-from utils.research_answer import generate_research_answer
+import utils.research_answer as research_answer
 
-evidence = [
+
+EVIDENCE = [
     {
         "site": "stackoverflow",
         "site_name": "Stack Overflow",
@@ -25,11 +26,46 @@ evidence = [
     }
 ]
 
-result = generate_research_answer(
-    question="Why does useEffect run twice in React 18?",
-    source="stackexchange",
-    evidence=evidence,
-)
 
-print("\n================ RESULT ================\n")
-print(result)
+def test_generate_research_answer_with_mocked_llm(monkeypatch):
+    """
+    Test answer generation without making a real Groq API request.
+    """
+
+    class FakeLLM:
+        def invoke(self, prompt):
+            class FakeResponse:
+                content = (
+                    '{"relevant":true,'
+                    '"sufficient":true,'
+                    '"quality":"high",'
+                    '"reason":"The retrieved Stack Overflow evidence directly '
+                    'explains the React 18 StrictMode behavior.",'
+                    '"answer":"React 18 StrictMode can intentionally run effects '
+                    'twice during development to help detect side effects. '
+                    'This behavior does not mean the effect runs twice in '
+                    'production.",'
+                    '"citations":["https://stackoverflow.com/questions/'
+                    '72238175/why-useeffect-running-twice-and-how-to-handle-it-well-in-react"]}'
+                )
+
+            return FakeResponse()
+
+    monkeypatch.setattr(
+        research_answer,
+        "llm",
+        FakeLLM(),
+    )
+
+    result = research_answer.generate_research_answer(
+        question="Why does useEffect run twice in React 18?",
+        source="stackexchange",
+        evidence=EVIDENCE,
+    )
+
+    assert result.relevant is True
+    assert result.sufficient is True
+    assert result.quality == "high"
+    assert result.answer
+    assert len(result.citations) == 1
+    assert result.citations[0] == EVIDENCE[0]["url"]
